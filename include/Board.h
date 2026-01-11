@@ -29,8 +29,7 @@ public:
     bool blackCanCastleKingSide{false};
     bool blackCanCastleQueenSide{false};
 
-    void reset();
-    void print();
+    void setup(const std::string &fenString);
 };
 
 #endif // CHESS_ENGINE_BOARD_H

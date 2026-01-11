@@ -4,12 +4,15 @@
 
 #include "Board.h"
 
+namespace {
 
 
-void Board::print() {
-    std::cout<<"Board"<<std::endl;
+
 }
 
-void Board::reset() {
-    std::cout<<"Reset"<<std::endl;
+void Board::setup(const std::string &fenString) {
+
+    // rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w AHah - -
+
+
 }

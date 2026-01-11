@@ -11,6 +11,7 @@ add_executable(
         chess_engine
         src/main.cpp
         src/Board.cpp
+        src/UCI.cpp
 )
 
 # Add the include folder for headers

@@ -1,11 +1,18 @@
 #include <iostream>
-#include "Board.h"
 
+#include "UCI.h"
+
+#ifdef _WIN32
+#include <windows.h>
+#endif
 
 
 int main() {
-    Board board;
-    board.print();
-    std::cout<< board.blackKings << std::endl;
+#ifdef _WIN32
+    SetConsoleOutputCP(CP_UTF8);
+    SetConsoleCP(CP_UTF8);
+#endif
+    UCI uci = UCI("debug.txt");
+    uci.start();
     return 0;
 }
