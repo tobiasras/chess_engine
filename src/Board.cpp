@@ -1,14 +1,10 @@
 #include <iostream>
-#include <ostream>
-
 #include "Board.h"
-
 #include <vector>
-#include <_bsd_types.h>
 
 namespace {
-    void setBitBoard(uint64_t &board, size_t x, size_t y) {
-        board |= 1ULL << (y * 8 + x);
+    void setBitBoard(uint64_t &board, size_t index) {
+        board |= 1ULL << index;
     }
 
     // chess pos e4
@@ -19,10 +15,32 @@ namespace {
             throw std::out_of_range("Chess position out of bounds: " + chessPos);
         return y * 8 + x;
     }
+
+    std::string pieceCharAt(uint64_t whitePawns, uint64_t blackPawns,
+                        uint64_t whiteKnights, uint64_t blackKnights,
+                        uint64_t whiteBishops, uint64_t blackBishops,
+                        uint64_t whiteRooks, uint64_t blackRooks,
+                        uint64_t whiteQueens, uint64_t blackQueens,
+                        uint64_t whiteKings, uint64_t blackKings,
+                        int index) {
+        if ((whitePawns >> index) & 1ULL) return "P";
+        if ((blackPawns >> index) & 1ULL) return "p";
+        if ((whiteKnights >> index) & 1ULL) return "N";
+        if ((blackKnights >> index) & 1ULL) return "n";
+        if ((whiteBishops >> index) & 1ULL) return "B";
+        if ((blackBishops >> index) & 1ULL) return "b";
+        if ((whiteRooks >> index) & 1ULL) return "R";
+        if ((blackRooks >> index) & 1ULL) return "r";
+        if ((whiteQueens >> index) & 1ULL) return "Q";
+        if ((blackQueens >> index) & 1ULL) return "q";
+        if ((whiteKings >> index) & 1ULL) return "K";
+        if ((blackKings >> index) & 1ULL) return "k";
+        return "."; // empty square
+    }
+
 }
 
 
-// example fenstring;  "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
 void Board::setup(const std::string &fenString) {
     // Split fen string into sections:
     std::vector<std::string> sections;
@@ -35,7 +53,6 @@ void Board::setup(const std::string &fenString) {
         p = dPos + d.length();
     }
     sections.push_back(fenString.substr(p));
-    // sanity check:
     if (sections.size() != 6) {
         throw std::invalid_argument("invalid fen string: " + fenString);
     }
@@ -53,10 +70,11 @@ void Board::setup(const std::string &fenString) {
             int digit = current - '0';
             x += digit;
         } else {
-            setPiece(current, x, y);
+            size_t index = y * 8 + x;
+            setPiece(current,index);
+            x++;
         }
     }
-
 
     // Side to move
     std::string playerToMove = sections[1];
@@ -75,7 +93,6 @@ void Board::setup(const std::string &fenString) {
     this->whiteCanCastleQueenSide = false;
     this->blackCanCastleKingSide = false;
     this->blackCanCastleQueenSide = false;
-
     if (castlingRights != "-") {
         for (size_t i = 0; i < castlingRights.length(); i++) {
             char current = castlingRights[i];
@@ -86,7 +103,6 @@ void Board::setup(const std::string &fenString) {
                         this->whiteCanCastleQueenSide = true;
                     } else
                         this->blackCanCastleQueenSide = true;
-
                     break;
                 case 'k':
                     if (isWhite) {
@@ -113,58 +129,106 @@ void Board::setup(const std::string &fenString) {
     std::string halfMoveSection = sections[4];
     this -> halfMove = std::stoi(halfMoveSection);
 
-    // Fullmove number
+    // Fullmove clock
     std::string fullMoveSection = sections[5];
     this -> fullMoves = std::stoi(fullMoveSection);
 }
 
-void Board::setPiece(const char &piece, size_t &x, size_t &y) {
-    bool isWhite = std::isupper(piece);
 
+void Board::setPiece(const char &piece, size_t index) {
+    bool isWhite = std::isupper(piece);
     switch (std::tolower(piece)) {
         case 'r':
             if (isWhite) {
-                setBitBoard(this->whiteRooks, x, y);
+                setBitBoard(this->whiteRooks, index);
             } else {
-                setBitBoard(this->blackRooks, x, y);
+                setBitBoard(this->blackRooks, index);
             }
             break;
         case 'n':
             if (isWhite) {
-                setBitBoard(this->whiteKnights, x, y);
+                setBitBoard(this->whiteKnights, index);
             } else {
-                setBitBoard(this->blackKnights, x, y);
+                setBitBoard(this->blackKnights, index);
             }
             break;
         case 'b':
             if (isWhite) {
-                setBitBoard(this->whiteBishops, x, y);
+                setBitBoard(this->whiteBishops, index);
             } else {
-                setBitBoard(this->blackBishops, x, y);
+                setBitBoard(this->blackBishops, index);
             }
             break;
         case 'q':
             if (isWhite) {
-                setBitBoard(this->whiteQueens, x, y);
+                setBitBoard(this->whiteQueens, index);
             } else {
-                setBitBoard(this->blackQueens, x, y);
+                setBitBoard(this->blackQueens, index);
             }
             break;
         case 'k':
             if (isWhite) {
-                setBitBoard(this->whiteKings, x, y);
+                setBitBoard(this->whiteKings, index);
             } else {
-                setBitBoard(this->blackKings, x, y);
+                setBitBoard(this->blackKings, index);
             }
             break;
         case 'p':
             if (isWhite) {
-                setBitBoard(this->whitePawns, x, y);
+                setBitBoard(this->whitePawns, index);
             } else {
-                setBitBoard(this->blackPawns, x, y);
+                setBitBoard(this->blackPawns, index);
             }
             break;
         default:
             throw std::invalid_argument("invalid piece");
     }
+}
+
+
+
+
+
+void Board::makeMove(const std::string &move) {
+
+}
+
+void Board::getPiece(size_t &index) {
+
+}
+
+
+// debug
+void Board::boardToText() {
+    std::cout << "Board state:\n";
+    for (int rank = 7; rank >= 0; rank--) {
+        std::cout << rank + 1 << " "; // print rank
+        for (int file = 0; file < 8; file++) {
+            int index = rank * 8 + file;
+            std::cout << pieceCharAt(
+                whitePawns, blackPawns,
+                whiteKnights, blackKnights,
+                whiteBishops, blackBishops,
+                whiteRooks, blackRooks,
+                whiteQueens, blackQueens,
+                whiteKings, blackKings,
+                index
+            ) << " ";
+        }
+        std::cout << "\n";
+    }
+    std::cout << "  a b c d e f g h\n"; // file letters
+    std::cout << "Side to move: " << (whiteTurn ? "white" : "black") << "\n";
+    std::cout << "Castling rights: "
+              << (whiteCanCastleKingSide ? "K" : "")
+              << (whiteCanCastleQueenSide ? "Q" : "")
+              << (blackCanCastleKingSide ? "k" : "")
+              << (blackCanCastleQueenSide ? "q" : "")
+              << "\n";
+    std::cout << "En passant square: ";
+    if (enPassantSquare == -1) std::cout << "-";
+    else std::cout << enPassantSquare;
+    std::cout << "\n";
+    std::cout << "Halfmove clock: " << halfMove << "\n";
+    std::cout << "Fullmove number: " << fullMoves << "\n";
 }

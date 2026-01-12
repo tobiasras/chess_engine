@@ -26,6 +26,10 @@ private:
      void handleCommand(const std::string& command);
      void handleCommandUCI();
      void handleCommandPosition(std::vector<std::string> &tokens);
+     void handleCommandGo(std::vector<std::string> &tokens);
+
+
+
      void log(const std::string &who, const std::string &msg);
      void answer(const std::string& response);
 };

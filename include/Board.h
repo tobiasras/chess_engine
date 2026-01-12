@@ -34,10 +34,23 @@ public:
     bool blackCanCastleQueenSide{false};
 
     void setup(const std::string &fenString);
+    void makeMove(const std::string &move);
+
+    void boardToText();
 
 
 private:
-    void setPiece(const char &piece, size_t &x, size_t &y);
+    void setPiece(const char &piece, size_t index);
+    void getPiece(size_t &index);
+
+    // debug
+
+
 };
+
+
+
+
+
 
 #endif // CHESS_ENGINE_BOARD_H

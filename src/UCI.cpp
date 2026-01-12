@@ -6,8 +6,6 @@
 #include <vector>
 
 
-
-
 UCI::UCI(const std::string &debugFilename) : logFile(debugFilename, std::ios::out | std::ios::trunc),
                                              debugFilename(debugFilename) {
 }
@@ -44,16 +42,24 @@ void UCI::handleCommand(const std::string &command) {
         // this command does not need a response
     } else if (tokens[0] == "position") {
         handleCommandPosition(tokens);
+    } else if (tokens[0] == "go") {
+        handleCommandGo(tokens);
     } else {
         answer("invalid command");
     }
 }
 
+void UCI::handleCommandGo(std::vector<std::string> &tokens) {
+    answer("bestmove e2e4 ponder e7e5");
+}
+
 
 void UCI::handleCommandPosition(std::vector<std::string> &tokens) {
+
     if (tokens[1] == "startpos") {
         const std::string fenString = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"; // default chess pos
         board.setup(fenString);
+        // if moves then perform them
     } else if (tokens[1] == "fen") {
         std::string fenString;
         // start with token 2, since 0, is pos, 1 is fen then the actual string starts:
@@ -63,8 +69,20 @@ void UCI::handleCommandPosition(std::vector<std::string> &tokens) {
         fenString.pop_back(); // removes last ""
         board.setup(fenString);
     }
-}
 
+    // makes moves
+    for (size_t i = 2; i < tokens.size(); i++) {
+        if (tokens[i] == "moves") {
+            for (size_t j = i + 1; j < tokens.size(); j++) {
+                this->board.makeMove(tokens[j]);
+            }
+            break;
+        }
+    }
+
+    // for debug
+    board.boardToText();
+}
 
 
 void UCI::handleCommandUCI() {
@@ -72,7 +90,6 @@ void UCI::handleCommandUCI() {
     answer("id author Tobias Juul Rasmussen");
     answer("uciok");
 }
-
 
 
 void UCI::log(const std::string &who, const std::string &msg) {
