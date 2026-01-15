@@ -8,6 +8,13 @@
 
 class Board {
 public:
+    void setup(const std::string &fenString);
+    void makeMove(const std::string &move);
+
+    // debugging
+    void boardToText();
+
+private:
     uint64_t whitePawns{};
     uint64_t blackPawns{};
     uint64_t whiteKnights{};
@@ -22,29 +29,20 @@ public:
     uint64_t blackRooks{};
     bool whiteTurn{true};
 
-    int enPassantSquare{-1};
-    int moveSinceLastCapture{0};
+    size_t enPassantSquare{65};
+    size_t moveSinceLastCapture{0};
 
-    int halfMove {0};
-    int fullMoves {1};
+    size_t halfMove {0};
+    size_t fullMoves {1};
 
     bool whiteCanCastleKingSide{false};
     bool whiteCanCastleQueenSide{false};
     bool blackCanCastleKingSide{false};
     bool blackCanCastleQueenSide{false};
 
-    void setup(const std::string &fenString);
-    void makeMove(const std::string &move);
-
-    void boardToText();
-
-
-private:
     void setPiece(const char &piece, size_t index);
-    void getPiece(size_t &index);
-
-    // debug
-
+    char getPieceFromIndex(size_t &index);
+    uint64_t& getBoardFromPiece(const char &piece);
 
 };
 

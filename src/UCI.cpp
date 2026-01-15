@@ -55,7 +55,6 @@ void UCI::handleCommandGo(std::vector<std::string> &tokens) {
 
 
 void UCI::handleCommandPosition(std::vector<std::string> &tokens) {
-
     if (tokens[1] == "startpos") {
         const std::string fenString = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"; // default chess pos
         board.setup(fenString);

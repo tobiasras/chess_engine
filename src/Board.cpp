@@ -8,7 +8,7 @@ namespace {
     }
 
     // chess pos e4
-    int chessPosToindex(std::string chessPos) {
+    size_t chessPosToindex(std::string chessPos) {
         const int x = chessPos[0] - 'a';
         const int y = chessPos[1] - '1';
         if (x > 7 || y > 7)
@@ -16,13 +16,14 @@ namespace {
         return y * 8 + x;
     }
 
-    std::string pieceCharAt(uint64_t whitePawns, uint64_t blackPawns,
-                        uint64_t whiteKnights, uint64_t blackKnights,
-                        uint64_t whiteBishops, uint64_t blackBishops,
-                        uint64_t whiteRooks, uint64_t blackRooks,
-                        uint64_t whiteQueens, uint64_t blackQueens,
-                        uint64_t whiteKings, uint64_t blackKings,
-                        int index) {
+    std::string pieceCharAt(
+        uint64_t whitePawns, uint64_t blackPawns,
+        uint64_t whiteKnights, uint64_t blackKnights,
+        uint64_t whiteBishops, uint64_t blackBishops,
+        uint64_t whiteRooks, uint64_t blackRooks,
+        uint64_t whiteQueens, uint64_t blackQueens,
+        uint64_t whiteKings, uint64_t blackKings,
+        int index) {
         if ((whitePawns >> index) & 1ULL) return "P";
         if ((blackPawns >> index) & 1ULL) return "p";
         if ((whiteKnights >> index) & 1ULL) return "N";
@@ -37,7 +38,6 @@ namespace {
         if ((blackKings >> index) & 1ULL) return "k";
         return "."; // empty square
     }
-
 }
 
 
@@ -71,7 +71,7 @@ void Board::setup(const std::string &fenString) {
             x += digit;
         } else {
             size_t index = y * 8 + x;
-            setPiece(current,index);
+            setPiece(current, index);
             x++;
         }
     }
@@ -119,7 +119,7 @@ void Board::setup(const std::string &fenString) {
     // En passant target square
     std::string enPassant = sections[3];
     if (enPassant != "-") {
-        int index = chessPosToindex(enPassant);
+        size_t index = chessPosToindex(enPassant);
         this->enPassantSquare = index;
     } else {
         this->enPassantSquare = -1;
@@ -127,11 +127,11 @@ void Board::setup(const std::string &fenString) {
 
     // Halfmove clock
     std::string halfMoveSection = sections[4];
-    this -> halfMove = std::stoi(halfMoveSection);
+    this->halfMove = std::stoi(halfMoveSection);
 
     // Fullmove clock
     std::string fullMoveSection = sections[5];
-    this -> fullMoves = std::stoi(fullMoveSection);
+    this->fullMoves = std::stoi(fullMoveSection);
 }
 
 
@@ -187,14 +187,78 @@ void Board::setPiece(const char &piece, size_t index) {
 
 
 
+// todo
+/*
+ *add castling, movecounter, last capture
+ */
 
-
+// move: e3e5
 void Board::makeMove(const std::string &move) {
+    this->whiteTurn = !whiteTurn;
 
+
+
+    size_t startPos = chessPosToindex(move.substr(0, 2));
+    size_t endPos = chessPosToindex(move.substr(2, 2));
+    char piece = getPieceFromIndex(startPos);
+    uint64_t &board = getBoardFromPiece(piece);
+
+    // check if it was a capture
+    // here
+
+
+
+
+    // very important that it is no called on empty square
+    // remove piece from start
+    board ^= (1ULL << startPos);
+    if (move.length() == 4) {
+        board |= (1ULL << endPos);
+    } else if (move.length() == 5) {
+        char pieceToPromote = move[4];
+        if (this->whiteTurn) {
+            pieceToPromote = std::toupper(pieceToPromote);
+        }
+        uint64_t &boardForPromotion = getBoardFromPiece(pieceToPromote);
+        boardForPromotion |= (1ULL << endPos);
+    } else {
+        throw std::invalid_argument("invalid move");
+    }
 }
 
-void Board::getPiece(size_t &index) {
 
+uint64_t &Board::getBoardFromPiece(const char &piece) {
+    switch (piece) {
+        case 'P': return whitePawns;
+        case 'p': return blackPawns;
+        case 'N': return whiteKnights;
+        case 'n': return blackKnights;
+        case 'B': return whiteBishops;
+        case 'b': return blackBishops;
+        case 'R': return whiteRooks;
+        case 'r': return blackRooks;
+        case 'Q': return whiteQueens;
+        case 'q': return blackQueens;
+        case 'K': return whiteKings;
+        case 'k': return blackKings;
+        default:
+            throw std::invalid_argument("Invalid piece");
+    }
+}
+
+char Board::getPieceFromIndex(size_t &index) {
+    if ((whitePawns >> index) & 1ULL) return 'P';
+    if ((blackPawns >> index) & 1ULL) return 'p';
+    if ((whiteKnights >> index) & 1ULL) return 'N';
+    if ((blackKnights >> index) & 1ULL) return 'n';
+    if ((whiteBishops >> index) & 1ULL) return 'B';
+    if ((blackBishops >> index) & 1ULL) return 'b';
+    if ((whiteRooks >> index) & 1ULL) return 'R';
+    if ((blackRooks >> index) & 1ULL) return 'r';
+    if ((whiteQueens >> index) & 1ULL) return 'Q';
+    if ((blackQueens >> index) & 1ULL) return 'q';
+    if ((whiteKings >> index) & 1ULL) return 'K';
+    if ((blackKings >> index) & 1ULL) return 'k';
 }
 
 
@@ -220,11 +284,11 @@ void Board::boardToText() {
     std::cout << "  a b c d e f g h\n"; // file letters
     std::cout << "Side to move: " << (whiteTurn ? "white" : "black") << "\n";
     std::cout << "Castling rights: "
-              << (whiteCanCastleKingSide ? "K" : "")
-              << (whiteCanCastleQueenSide ? "Q" : "")
-              << (blackCanCastleKingSide ? "k" : "")
-              << (blackCanCastleQueenSide ? "q" : "")
-              << "\n";
+            << (whiteCanCastleKingSide ? "K" : "")
+            << (whiteCanCastleQueenSide ? "Q" : "")
+            << (blackCanCastleKingSide ? "k" : "")
+            << (blackCanCastleQueenSide ? "q" : "")
+            << "\n";
     std::cout << "En passant square: ";
     if (enPassantSquare == -1) std::cout << "-";
     else std::cout << enPassantSquare;
