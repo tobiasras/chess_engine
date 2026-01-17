@@ -55,6 +55,8 @@ void UCI::handleCommandGo(std::vector<std::string> &tokens) {
 
 
 void UCI::handleCommandPosition(std::vector<std::string> &tokens) {
+    board.reset();
+
     if (tokens[1] == "startpos") {
         const std::string fenString = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"; // default chess pos
         board.setup(fenString);
@@ -62,7 +64,7 @@ void UCI::handleCommandPosition(std::vector<std::string> &tokens) {
     } else if (tokens[1] == "fen") {
         std::string fenString;
         // start with token 2, since 0, is pos, 1 is fen then the actual string starts:
-        for (size_t i = 2; i < tokens.size(); i++) {
+        for (size_t i = 2; i < 8; i++) {
             fenString += tokens[i] + " ";
         }
         fenString.pop_back(); // removes last ""
@@ -78,7 +80,6 @@ void UCI::handleCommandPosition(std::vector<std::string> &tokens) {
             break;
         }
     }
-
     // for debug
     board.boardToText();
 }

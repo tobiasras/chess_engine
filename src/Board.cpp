@@ -38,6 +38,24 @@ namespace {
         if ((blackKings >> index) & 1ULL) return "k";
         return "."; // empty square
     }
+    // Board squares
+    constexpr size_t A1 = 0;
+    constexpr size_t B1 = 1;
+    constexpr size_t C1 = 2;
+    constexpr size_t D1 = 3;
+    constexpr size_t E1 = 4;
+    constexpr size_t F1 = 5;
+    constexpr size_t G1 = 6;
+    constexpr size_t H1 = 7;
+    constexpr size_t A8 = 56;
+    constexpr size_t B8 = 57;
+    constexpr size_t C8 = 58;
+    constexpr size_t D8 = 59;
+    constexpr size_t E8 = 60;
+    constexpr size_t F8 = 61;
+    constexpr size_t G8 = 62;
+    constexpr size_t H8 = 63;
+
 }
 
 
@@ -52,6 +70,7 @@ void Board::setup(const std::string &fenString) {
         sections.push_back(token);
         p = dPos + d.length();
     }
+
     sections.push_back(fenString.substr(p));
     if (sections.size() != 6) {
         throw std::invalid_argument("invalid fen string: " + fenString);
@@ -186,35 +205,112 @@ void Board::setPiece(const char &piece, size_t index) {
 }
 
 
-
-// todo
-/*
- *add castling, movecounter, last capture
- */
-
 // move: e3e5
 void Board::makeMove(const std::string &move) {
-    this->whiteTurn = !whiteTurn;
-
-
-
+    if (!this->whiteTurn) {
+        this->fullMoves += 1;
+    }
+    // get start pos and end pos.
     size_t startPos = chessPosToindex(move.substr(0, 2));
     size_t endPos = chessPosToindex(move.substr(2, 2));
+
+    int startCol = startPos % 8;
+    int endCol = endPos % 8;
+    int startRow = startPos / 8;
+    int endRow = endPos / 8;
+
+    bool isCapture = false;
+
+
+    // get piece, and board from startpos
     char piece = getPieceFromIndex(startPos);
     uint64_t &board = getBoardFromPiece(piece);
 
-    // check if it was a capture
-    // here
+    // en passent logic
+    if (endPos == this->enPassantSquare &&
+        std::tolower(piece) == 'p' &&
+        std::abs(startCol - endCol) == 1) {
+        if (this->whiteTurn) {
+            size_t rmI = enPassantSquare - 8;
+            this->blackPawns &= ~(1ULL << rmI);
+        } else {
+            size_t rmI = enPassantSquare + 8;
+            this->whitePawns &= ~(1ULL << rmI);
+        }
+        isCapture = true;
+        this->enPassantSquare = 65;
+    }
 
+    // check if capture:
+    char capturePiece = getPieceFromIndex(endPos);
 
+    if (capturePiece != ' ') {
+        isCapture = true;
+        uint64_t &capturedPieceBoard = getBoardFromPiece(capturePiece);
+        capturedPieceBoard ^= (1ULL << endPos);
+    }
 
+    // if king is start pos, and is moved, castling is no longer optional
+    if (piece == 'K') {
+        this->whiteCanCastleKingSide = false;
+        this->whiteCanCastleQueenSide = false;
+    }
+    if (piece == 'k') {
+        this->blackCanCastleKingSide = false;
+        this->blackCanCastleQueenSide = false;
+    }
+
+    if (startPos == A1) {
+        this->whiteCanCastleQueenSide = false;
+    } else if (startPos == H1) {
+        this->whiteCanCastleKingSide = false;
+    }
+
+    if (startPos == A8) {
+        this->blackCanCastleQueenSide = false;
+    } else if (startPos == H8) {
+        this->blackCanCastleKingSide = false;
+    }
+
+    // if move is a castle, we also need to move the rock
+    if (move == "e1c1") {
+        // queen castle (white)
+        uint64_t &rockBoard = getBoardFromPiece('R');
+        rockBoard ^= 1ULL << A1;
+        rockBoard |= 1ULL << D1;
+        this->whiteCanCastleKingSide = false;
+        this->whiteCanCastleQueenSide = false;
+    } else if (move == "e1g1") {
+        // king castle (white)
+        uint64_t &rockBoard = getBoardFromPiece('R');
+        rockBoard ^= 1ULL << H1;
+        rockBoard |= 1ULL << F1;
+        this->whiteCanCastleKingSide = false;
+        this->whiteCanCastleQueenSide = false;
+    } else if (move == "e8c8") {
+        // queen castle (black)
+        uint64_t &rockBoard = getBoardFromPiece('r');
+        rockBoard ^= 1ULL << A1;
+        rockBoard |= 1ULL << D8;
+        this->blackCanCastleKingSide = false;
+        this->blackCanCastleQueenSide = false;
+    } else if (move == "e8g8") {
+        // king castle (black)
+        uint64_t &rockBoard = getBoardFromPiece('r');
+        rockBoard ^= 1ULL << H8;
+        rockBoard |= 1ULL << F8;
+        this->blackCanCastleKingSide = false;
+        this->blackCanCastleQueenSide = false;
+    }
 
     // very important that it is no called on empty square
-    // remove piece from start
+    // remove piece from startPos
     board ^= (1ULL << startPos);
     if (move.length() == 4) {
+        // add piece to board
         board |= (1ULL << endPos);
     } else if (move.length() == 5) {
+        // incase of promotion <startPos:endPos:pieceToPromote>
         char pieceToPromote = move[4];
         if (this->whiteTurn) {
             pieceToPromote = std::toupper(pieceToPromote);
@@ -224,6 +320,26 @@ void Board::makeMove(const std::string &move) {
     } else {
         throw std::invalid_argument("invalid move");
     }
+
+    if (std::tolower(piece) == 'p' || isCapture) {
+        this->halfMove = 0;
+    } else {
+        this->halfMove++;
+    }
+
+    int rowDist = std::abs(startRow - endRow);
+    if (rowDist == 2 && std::tolower(piece) == 'p') {
+        if (this->whiteTurn) {
+            this->enPassantSquare = startPos + 8;
+        } else {
+            this->enPassantSquare = startPos - 8;
+        }
+    } else {
+        this->enPassantSquare = 65;
+    }
+
+    // flip turn
+    this->whiteTurn = !this->whiteTurn;
 }
 
 
@@ -259,6 +375,7 @@ char Board::getPieceFromIndex(size_t &index) {
     if ((blackQueens >> index) & 1ULL) return 'q';
     if ((whiteKings >> index) & 1ULL) return 'K';
     if ((blackKings >> index) & 1ULL) return 'k';
+    return ' '; // empty
 }
 
 
@@ -295,4 +412,9 @@ void Board::boardToText() {
     std::cout << "\n";
     std::cout << "Halfmove clock: " << halfMove << "\n";
     std::cout << "Fullmove number: " << fullMoves << "\n";
+}
+
+
+void Board::reset() {
+    *this = Board{};
 }

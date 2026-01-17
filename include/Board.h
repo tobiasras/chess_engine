@@ -10,7 +10,7 @@ class Board {
 public:
     void setup(const std::string &fenString);
     void makeMove(const std::string &move);
-
+    void reset();
     // debugging
     void boardToText();
 
@@ -30,7 +30,6 @@ private:
     bool whiteTurn{true};
 
     size_t enPassantSquare{65};
-    size_t moveSinceLastCapture{0};
 
     size_t halfMove {0};
     size_t fullMoves {1};
