@@ -4,17 +4,33 @@
 
 #ifndef CHESS_ENGINE_BOARD_H
 #define CHESS_ENGINE_BOARD_H
+#include "Move.h"
 #include <cstdint>
+#include <string>
 
 class Board {
 public:
     void setup(const std::string &fenString);
-    void makeMove(const std::string &move);
     void reset();
+
+    void makeMove(const Move &move);
+    void undoMove(const Move &move);
+
+    // helpers
+    uint64_t whitePieces() const;
+    uint64_t blackPieces() const;
+    uint64_t occupied() const;
+    bool isInCheck() const;
+
     // debugging
     void boardToText();
 
 private:
+    void setPiece(const char &piece, size_t index);
+    char getPieceFromIndex(size_t &index);
+    uint64_t& getBoardFromPiece(const char &piece);
+
+    // current board
     uint64_t whitePawns{};
     uint64_t blackPawns{};
     uint64_t whiteKnights{};
@@ -39,10 +55,9 @@ private:
     bool blackCanCastleKingSide{false};
     bool blackCanCastleQueenSide{false};
 
-    void setPiece(const char &piece, size_t index);
-    char getPieceFromIndex(size_t &index);
-    uint64_t& getBoardFromPiece(const char &piece);
-
+    // previous move info
+    char pieceCaptured{};
+    size_t prevCaptureIndex{};
 };
 
 

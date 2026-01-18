@@ -50,7 +50,8 @@ void UCI::handleCommand(const std::string &command) {
 }
 
 void UCI::handleCommandGo(std::vector<std::string> &tokens) {
-    answer("bestmove e2e4 ponder e7e5");
+    auto [bestMove, bestResponse] = this -> engine.bestMove(this->board);
+    answer("bestmove " + bestMove.toUciString());
 }
 
 
@@ -71,17 +72,18 @@ void UCI::handleCommandPosition(std::vector<std::string> &tokens) {
         board.setup(fenString);
     }
 
+    Move move{};
     // makes moves
     for (size_t i = 2; i < tokens.size(); i++) {
         if (tokens[i] == "moves") {
             for (size_t j = i + 1; j < tokens.size(); j++) {
-                this->board.makeMove(tokens[j]);
+                this->board.makeMove(move.fromUciString(tokens[j]));
             }
             break;
         }
     }
     // for debug
-    board.boardToText();
+    //board.boardToText();
 }
 
 

@@ -10,6 +10,7 @@
 #include <vector>
 
 #include "Board.h"
+#include "Engine.h"
 
 class UCI {
 
@@ -22,13 +23,12 @@ private:
      std::string debugFilename;
 
      Board board;
+     Engine engine;
 
      void handleCommand(const std::string& command);
      void handleCommandUCI();
      void handleCommandPosition(std::vector<std::string> &tokens);
      void handleCommandGo(std::vector<std::string> &tokens);
-
-
 
      void log(const std::string &who, const std::string &msg);
      void answer(const std::string& response);

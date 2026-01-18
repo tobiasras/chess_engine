@@ -12,6 +12,11 @@ add_executable(
         src/main.cpp
         src/Board.cpp
         src/UCI.cpp
+        include/Engine.h
+        src/Engine.cpp
+        include/Move.h
+        src/Move.cpp
+        include/Const.h
 )
 
 # Add the include folder for headers
