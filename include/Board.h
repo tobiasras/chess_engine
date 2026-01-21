@@ -26,8 +26,9 @@ public:
     void boardToText();
 
 private:
+    void undoCaptureLikeMove(const Move &move);
     void setPiece(const char &piece, size_t index);
-    char getPieceFromIndex(size_t &index);
+    char getPieceFromIndex(const size_t &index);
     uint64_t& getBoardFromPiece(const char &piece);
 
     // current board
@@ -56,8 +57,13 @@ private:
     bool blackCanCastleQueenSide{false};
 
     // previous move info
-    char pieceCaptured{};
+
+    char prevPieceCaptured{};
     size_t prevCaptureIndex{};
+    size_t prevHalfMoves{};
+
+
+
 };
 
 

@@ -16,7 +16,6 @@ add_executable(
         src/Engine.cpp
         include/Move.h
         src/Move.cpp
-        include/Const.h
 )
 
 # Add the include folder for headers

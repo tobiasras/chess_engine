@@ -6,7 +6,6 @@
 #include "Engine.h"
 #include "Board.h"
 #include "Move.h"
-
 #include <string>
 #include <utility>
 

@@ -1,7 +1,7 @@
 #include <iostream>
 #include "Board.h"
 #include <vector>
-#include "Const.h"
+#include "Move.h"
 
 namespace {
     void setBitBoard(uint64_t &board, size_t index) {
@@ -38,6 +38,7 @@ namespace {
         if ((whiteKings >> index) & 1ULL) return "K";
         if ((blackKings >> index) & 1ULL) return "k";
         return "."; // empty square
+
     }
 
     // Board squares
@@ -57,6 +58,9 @@ namespace {
     constexpr size_t F8 = 61;
     constexpr size_t G8 = 62;
     constexpr size_t H8 = 63;
+
+
+
 }
 
 // public
@@ -149,6 +153,7 @@ void Board::setup(const std::string &fenString) {
     std::string halfMoveSection = sections[4];
     this->halfMove = std::stoi(halfMoveSection);
 
+
     // Fullmove clock
     std::string fullMoveSection = sections[5];
     this->fullMoves = std::stoi(fullMoveSection);
@@ -224,30 +229,30 @@ void Board::makeMove(const Move &move) {
     }
 
     // if move is a castle, we also need to move the rock
-    if (move.from == E1 && move.to == E8) {
+    if (move.from == E1 && move.to == C1) {
         // queen castle (white)
-        uint64_t &rockBoard = getBoardFromPiece('R');
+        uint64_t &rockBoard = this->whiteRooks;
         rockBoard ^= 1ULL << A1;
         rockBoard |= 1ULL << D1;
         this->whiteCanCastleKingSide = false;
         this->whiteCanCastleQueenSide = false;
     } else if (move.from == E1 && move.to == G1) {
         // king castle (white)
-        uint64_t &rockBoard = getBoardFromPiece('R');
+        uint64_t &rockBoard = this->whiteRooks;
         rockBoard ^= 1ULL << H1;
         rockBoard |= 1ULL << F1;
         this->whiteCanCastleKingSide = false;
         this->whiteCanCastleQueenSide = false;
     } else if (move.from == E8 && move.to == C8) {
         // queen castle (black)
-        uint64_t &rockBoard = getBoardFromPiece('r');
+        uint64_t &rockBoard = this->blackRooks;
         rockBoard ^= 1ULL << A1;
         rockBoard |= 1ULL << D8;
         this->blackCanCastleKingSide = false;
         this->blackCanCastleQueenSide = false;
     } else if (move.from == E8 && move.to == G8) {
         // king castle (black)
-        uint64_t &rockBoard = getBoardFromPiece('r');
+        uint64_t &rockBoard = this->blackRooks;
         rockBoard ^= 1ULL << H8;
         rockBoard |= 1ULL << F8;
         this->blackCanCastleKingSide = false;
@@ -261,13 +266,13 @@ void Board::makeMove(const Move &move) {
     } else {
         // todo speed up by not using char
         char pieceToPromote;
-        if (move.promotion == PROMOTION_PIECE_QUEEN) {
+        if (move.promotion == QUEEN) {
             pieceToPromote == 'q';
-        } else if (move.promotion == PROMOTION_PIECE_ROOK) {
+        } else if (move.promotion == ROOK) {
             pieceToPromote == 'r';
-        } else if (move.promotion == PROMOTION_PIECE_BISHOP) {
+        } else if (move.promotion == BISHOP) {
             pieceToPromote == 'k';
-        } else if (move.promotion == PROMOTION_PIECE_KNIGHT) {
+        } else if (move.promotion == KNIGHT) {
             pieceToPromote == 'b';
         } else {
             throw std::invalid_argument("Invalid promotion");
@@ -281,8 +286,10 @@ void Board::makeMove(const Move &move) {
     }
 
     if (std::tolower(piece) == 'p' || isCapture) {
+        this->prevHalfMoves = halfMove;
         this->halfMove = 0;
     } else {
+        this->prevHalfMoves = halfMove;
         this->halfMove++;
     }
 
@@ -302,7 +309,75 @@ void Board::makeMove(const Move &move) {
 
 
 void Board::undoMove(const Move &move) {
-    throw std::invalid_argument("Undo move not implemented");
+    switch (move.type) {
+        case NOT_SET:
+            throw std::invalid_argument("move type not set");
+
+        case MOVE: {
+            char piece = getPieceFromIndex(move.to);
+            uint64_t &board = getBoardFromPiece(piece);
+            board ^= 1ULL << move.to;
+            board |= 1ULL << move.from;
+            break;
+        }
+        case CAPTURE: {
+            undoCaptureLikeMove(move);
+            break;
+        }
+        case PROMOTION: {
+            char piece = getPieceFromIndex(move.to);
+            uint64_t& board = getBoardFromPiece(piece);
+            board ^= 1ULL << move.to;
+
+            if (!this->whiteTurn) {
+                // was whites turn
+                this->whitePawns |= 1ULL << move.from;
+            } else {
+                // was black turn
+                this->blackPawns |= 1ULL << move.from;
+            }
+
+            break;
+        }
+        case EN_PASSANT: {
+            undoCaptureLikeMove(move);
+            break;
+        }
+        case CASTLING: {
+            if (move.from == E1 && move.to == C1) {
+                // queen castle (white)
+                this->whiteKings ^= 1ULL << move.to;
+                this->whiteKings |= 1ULL << move.from;
+                this->whiteRooks ^= 1ULL << D1;
+                this->whiteRooks |= 1ULL << A1;
+                this->whiteCanCastleQueenSide = true;
+            } else if (move.from == E1 && move.to == G1) {
+                // king castle (white)
+                this->whiteKings ^= 1ULL << move.to;
+                this->whiteKings |= 1ULL << move.from;
+                this->whiteRooks ^= 1ULL << F1;
+                this->whiteRooks |= 1ULL << H1;
+                this->whiteCanCastleKingSide = true;
+            } else if (move.from == E8 && move.to == C8) {
+                // queen castle (black)
+                this->blackKings ^= 1ULL << move.to;
+                this->blackKings |= 1ULL << move.from;
+                this->blackRooks ^= 1ULL << D8;
+                this->blackRooks |= 1ULL << A8;
+                this->blackCanCastleQueenSide = true;
+            } else if (move.from == E8 && move.to == G8) {
+                // king castle (black)
+                this->blackKings ^= 1ULL << move.to;
+                this->blackKings |= 1ULL << move.from;
+                this->blackRooks ^= 1ULL << F8;
+                this->blackRooks |= 1ULL << H8;
+                this->blackCanCastleQueenSide = true;
+            }
+            break;
+        }
+
+    }
+    // set variables
 }
 
 // debugging
@@ -410,7 +485,23 @@ uint64_t &Board::getBoardFromPiece(const char &piece) {
     }
 }
 
-char Board::getPieceFromIndex(size_t &index) {
+
+void Board::undoCaptureLikeMove(const Move &move) {
+    // restore captured piece
+    uint64_t &capBoard = getBoardFromPiece(this->prevPieceCaptured);
+    capBoard |= 1ULL << this->prevCaptureIndex;
+
+    // move capturing piece back
+    char piece = getPieceFromIndex(move.to);
+    uint64_t &board = getBoardFromPiece(piece);
+    board ^= 1ULL << move.to;
+    board |= 1ULL << move.from;
+}
+
+
+
+
+char Board::getPieceFromIndex(const size_t &index) {
     if ((whitePawns >> index) & 1ULL) return 'P';
     if ((blackPawns >> index) & 1ULL) return 'p';
     if ((whiteKnights >> index) & 1ULL) return 'N';
